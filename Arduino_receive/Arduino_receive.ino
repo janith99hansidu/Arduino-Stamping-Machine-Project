@@ -34,7 +34,8 @@ void setup() {
 
 void receiveEvent(int bytes) {
   int _receivedmessage = Wire.read();    // read one character from the I2C
-  
+  Serial.println(_receivedmessage);
+  delay(100);
   // send to on the M4 motor
   if(_receivedmessage==ONM4MOTOR){
     

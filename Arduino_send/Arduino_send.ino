@@ -1,5 +1,9 @@
 //include the wire library to communication between two arduino boards
 #include <Wire.h>
+//include lcd display library
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27,16,1);  
+
 
 //Times to setup
 int _timeM1leave = 1000;//time to leave the paper from the M1 in milliseconds
@@ -65,7 +69,7 @@ void setup() {
   // put your setup code here, to run once:
 
   //start the communication between receive arduino board
-    //Wire.begin(); 
+  Wire.begin(); 
 
 
   //start serial communication
@@ -88,7 +92,10 @@ void setup() {
   pinMode(_m3ctrlpin1,OUTPUT);
   pinMode(_m3ctrlpin2,OUTPUT);
   pinMode(_m3spctrlpin,OUTPUT);
-
+  
+  //initialize lcd display
+  lcd.init();
+  lcd.backlight(); 
 }
 
 void loop() {
@@ -114,25 +121,41 @@ void loop() {
 
   //turn on the machine in WORKING state and WORKING state condition
   if(_currentstate == WORKING){
+    
+    //first loop of the working state 
+      if(_loopcount ==1){
+        //fist statement to display 
+        lcd.print("Machine Starting");
+        delay(1000);
+        lcd.clear();
+      }
       if(_loopcount > 0){
         Serial.println("Power on the machine");
+        delay(500);
         
         //power on the M1 motor 
         digitalWrite(_m1ctrlpin1,HIGH);
         digitalWrite(_m1ctrlpin2,LOW);
         analogWrite(_m1spctrlpin,_m1ctrlspeed);
+        delay(_gndelaytime);
         
         //power on the M2 motor
         digitalWrite(_m2ctrlpin1,HIGH);
         digitalWrite(_m2ctrlpin2,LOW);
         analogWrite(_m2spctrlpin,_m2ctrlspeed);
+        delay(_gndelaytime);
 
         //power on the M4 motor
         // send message to on the M4 motor 
+        Serial.println("Begin transmission");
+        delay(_gndelaytime);
         Wire.beginTransmission(9); 
         Wire.write(ONM4MOTOR);             
-        Wire.endTransmission();
+        Wire.endTransmission(9);
+        Serial.println("End transmission");
+        delay(_gndelaytime);
         
+
         delay(_timeM1leave);//delay..............................................................
       
         //power off the M1 motor 
@@ -140,6 +163,7 @@ void loop() {
         digitalWrite(_m1ctrlpin1,LOW);
         digitalWrite(_m1ctrlpin2,LOW);
         analogWrite(_m1spctrlpin,_m1ctrlspeed);
+        delay(_gndelaytime);
         //M2 and M4 are on 
 
         delay(_timeM2leave);//delay..............................................................
@@ -149,6 +173,7 @@ void loop() {
         digitalWrite(_m2ctrlpin1,LOW);
         digitalWrite(_m2ctrlpin2,LOW);
         analogWrite(_m2spctrlpin,_m1ctrlspeed);
+        delay(_gndelaytime);
 
         delay(_time2setup);//delay................................................................
         
@@ -156,12 +181,13 @@ void loop() {
         Wire.beginTransmission(9); 
         Wire.write(OFFM4MOTOR);             
         Wire.endTransmission();
-        delay(1);
+        delay(_gndelaytime);
 
         //send message to off the M5 motor 
         Wire.beginTransmission(9); 
         Wire.write(ONM5MOTOR);             
         Wire.endTransmission();
+        delay(_gndelaytime);
 
         if(analogRead(_paperemptybtn)==1023){
           _currentstate = PAPEREMPTY;
@@ -183,7 +209,8 @@ void loop() {
         analogWrite(_m3spctrlpin,_m1ctrlspeed);
 
 
-        
+        //increase the counter variable
+        _loopcount+=1;
       }
     }
 
@@ -212,6 +239,5 @@ void loop() {
         analogWrite(_m3spctrlpin,_m1ctrlspeed);
 
     }
-
-
 }
+
